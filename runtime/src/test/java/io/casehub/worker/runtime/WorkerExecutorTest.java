@@ -26,7 +26,7 @@ class WorkerExecutorTest {
         Worker worker = Worker.builder()
             .name("greet")
             .capability(Capability.of("greet", "{}", "{}"))
-            .function((WorkerFunction) input -> WorkerResult.of(Map.of("greeting", "hello " + input.get("name"))))
+            .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of("greeting", "hello " + input.get("name")))))
             .build();
 
         WorkerResult result = executor.execute(worker, Map.of("name", "world"));
@@ -40,12 +40,12 @@ class WorkerExecutorTest {
         Worker worker = Worker.builder()
             .name("flaky")
             .capability(Capability.of("process", "{}", "{}"))
-            .function((WorkerFunction) input -> {
+            .function(new WorkerFunction.Sync(input -> {
                 if (attempts.incrementAndGet() < 3) {
                     throw new RuntimeException("transient");
                 }
                 return WorkerResult.of(Map.of("recovered", true));
-            })
+            }))
             .executionPolicy(new ExecutionPolicy(null, new RetryPolicy(3, 10)))
             .build();
 
@@ -59,7 +59,7 @@ class WorkerExecutorTest {
         Worker worker = Worker.builder()
             .name("broken")
             .capability(Capability.of("fail", "{}", "{}"))
-            .function((WorkerFunction) input -> { throw new RuntimeException("permanent"); })
+            .function(new WorkerFunction.Sync(input -> { throw new RuntimeException("permanent"); }))
             .executionPolicy(new ExecutionPolicy(null, new RetryPolicy(2, 10)))
             .build();
 

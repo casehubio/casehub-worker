@@ -20,7 +20,7 @@ public class MockWorkerExecutor implements WorkerExecutor {
     public WorkerResult execute(Worker worker, Map<String, Object> input) {
         executionCount.incrementAndGet();
         lastWorkerName.set(worker.name());
-        return worker.function().execute(input);
+        return ((io.casehub.worker.api.WorkerFunction.Sync) worker.function()).fn().apply(input);
     }
 
     public int executionCount() { return executionCount.get(); }

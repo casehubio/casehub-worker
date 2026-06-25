@@ -34,7 +34,7 @@ public class DefaultWorkerExecutor implements WorkerExecutor {
         try (Scope ignored = span.makeCurrent()) {
             WorkerResult result = policyEnforcer.execute(
                 worker.executionPolicy(),
-                () -> worker.function().execute(input));
+                () -> ((io.casehub.worker.api.WorkerFunction.Sync) worker.function()).fn().apply(input));
             span.setAttribute(AttributeKey.stringKey("worker.outcome"),
                 result.outcome().getClass().getSimpleName());
             return result;

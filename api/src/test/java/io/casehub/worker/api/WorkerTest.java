@@ -17,14 +17,14 @@ class WorkerTest {
         Worker worker = Worker.builder()
             .name("test-worker")
             .capability(Capability.of("process", "{}", "{}"))
-            .function((WorkerFunction) input -> WorkerResult.of(Map.of("result", "done")))
+            .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of("result", "done"))))
             .build();
 
         assertThat(worker.name()).isEqualTo("test-worker");
         assertThat(worker.capabilities()).hasSize(1);
         assertThat(worker.capabilities().get(0).name()).isEqualTo("process");
 
-        WorkerResult result = worker.function().execute(Map.of());
+        WorkerResult result = ((WorkerFunction.Sync) worker.function()).fn().apply(Map.of());
         assertThat(result.outcome()).isInstanceOf(WorkerOutcome.Success.class);
         assertThat(result.output()).containsEntry("result", "done");
     }
@@ -34,7 +34,7 @@ class WorkerTest {
         Worker worker = Worker.builder()
             .name("default-policy")
             .capability(Capability.of("test", "{}", "{}"))
-            .function((WorkerFunction) input -> WorkerResult.of(Map.of()))
+            .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of())))
             .build();
 
         assertThat(worker.executionPolicy()).isNotNull();
@@ -49,7 +49,7 @@ class WorkerTest {
         Worker worker = Worker.builder()
             .name("custom-policy")
             .capability(Capability.of("test", "{}", "{}"))
-            .function((WorkerFunction) input -> WorkerResult.of(Map.of()))
+            .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of())))
             .executionPolicy(policy)
             .build();
 

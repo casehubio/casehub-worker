@@ -4,7 +4,7 @@ import io.casehub.platform.api.governance.ExecutionPolicy;
 import io.casehub.platform.api.governance.RetryPolicy;
 import io.casehub.platform.governance.DefaultPolicyEnforcer;
 import io.casehub.platform.governance.PolicyEnforcementException;
-import io.casehub.worker.api.Capability;
+
 import io.casehub.worker.api.Worker;
 import io.casehub.worker.api.WorkerFunction;
 import io.casehub.worker.api.WorkerOutcome;
@@ -25,7 +25,7 @@ class WorkerExecutorTest {
     void execute_successfulWorker() {
         Worker worker = Worker.builder()
             .name("greet")
-            .capability(Capability.of("greet", "{}", "{}"))
+            .capabilityName("greet")
             .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of("greeting", "hello " + input.get("name")))))
             .build();
 
@@ -39,7 +39,7 @@ class WorkerExecutorTest {
         AtomicInteger attempts = new AtomicInteger(0);
         Worker worker = Worker.builder()
             .name("flaky")
-            .capability(Capability.of("process", "{}", "{}"))
+            .capabilityName("process")
             .function(new WorkerFunction.Sync(input -> {
                 if (attempts.incrementAndGet() < 3) {
                     throw new RuntimeException("transient");
@@ -58,7 +58,7 @@ class WorkerExecutorTest {
     void execute_exhaustsRetries_throwsPolicyException() {
         Worker worker = Worker.builder()
             .name("broken")
-            .capability(Capability.of("fail", "{}", "{}"))
+            .capabilityName("fail")
             .function(new WorkerFunction.Sync(input -> { throw new RuntimeException("permanent"); }))
             .executionPolicy(new ExecutionPolicy(null, new RetryPolicy(2, 10)))
             .build();

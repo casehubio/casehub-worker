@@ -16,13 +16,12 @@ class WorkerTest {
     void syncWorker_executesFunction() {
         Worker worker = Worker.builder()
             .name("test-worker")
-            .capability(Capability.of("process", "{}", "{}"))
+            .capabilityName("process")
             .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of("result", "done"))))
             .build();
 
         assertThat(worker.name()).isEqualTo("test-worker");
-        assertThat(worker.capabilities()).hasSize(1);
-        assertThat(worker.capabilities().get(0).name()).isEqualTo("process");
+        assertThat(worker.capabilityNames()).containsExactly("process");
 
         WorkerResult result = ((WorkerFunction.Sync) worker.function()).fn().apply(Map.of());
         assertThat(result.outcome()).isInstanceOf(WorkerOutcome.Success.class);
@@ -30,10 +29,56 @@ class WorkerTest {
     }
 
     @Test
+    void capabilityNames_isUnmodifiableSet() {
+        Worker worker = Worker.builder()
+            .name("w")
+            .capabilityNames("a", "b", "c")
+            .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of())))
+            .build();
+
+        assertThat(worker.capabilityNames()).containsExactlyInAnyOrder("a", "b", "c");
+        assertThatThrownBy(() -> worker.capabilityNames().add("d"))
+            .isInstanceOf(UnsupportedOperationException.class);
+    }
+
+    @Test
+    void capabilityNames_fromCollection() {
+        Worker worker = Worker.builder()
+            .name("w")
+            .capabilityNames(java.util.List.of("x", "y"))
+            .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of())))
+            .build();
+
+        assertThat(worker.capabilityNames()).containsExactlyInAnyOrder("x", "y");
+    }
+
+    @Test
+    void capabilityNames_rejectsNull() {
+        assertThatThrownBy(() -> Worker.builder()
+            .name("w")
+            .capabilityNames((java.util.Collection<String>) null)
+            .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of())))
+            .build())
+            .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void noFunction_builder_creates_worker_with_None() {
+        Worker worker = Worker.builder()
+            .name("external-worker")
+            .capabilityName("dispatch")
+            .noFunction()
+            .build();
+
+        assertThat(worker.function()).isSameAs(WorkerFunction.NONE);
+        assertThat(worker.function()).isInstanceOf(WorkerFunction.None.class);
+    }
+
+    @Test
     void worker_defaultExecutionPolicy() {
         Worker worker = Worker.builder()
             .name("default-policy")
-            .capability(Capability.of("test", "{}", "{}"))
+            .capabilityName("test")
             .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of())))
             .build();
 
@@ -48,7 +93,7 @@ class WorkerTest {
 
         Worker worker = Worker.builder()
             .name("custom-policy")
-            .capability(Capability.of("test", "{}", "{}"))
+            .capabilityName("test")
             .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of())))
             .executionPolicy(policy)
             .build();

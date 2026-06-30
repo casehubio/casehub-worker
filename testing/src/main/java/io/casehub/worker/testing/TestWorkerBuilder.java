@@ -1,6 +1,5 @@
 package io.casehub.worker.testing;
 
-import io.casehub.worker.api.Capability;
 import io.casehub.worker.api.Worker;
 import io.casehub.worker.api.WorkerResult;
 
@@ -13,7 +12,7 @@ public final class TestWorkerBuilder {
     public static Worker sync(String name, Function<Map<String, Object>, WorkerResult> fn) {
         return Worker.builder()
             .name(name)
-            .capability(Capability.of(name, "{}", "{}"))
+            .capabilityName(name)
             .function(fn)
             .build();
     }

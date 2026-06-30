@@ -23,4 +23,24 @@ class WorkerFunctionTest {
   void workerFunction_has_no_execute_method() throws Exception {
     assertThat(WorkerFunction.class.getDeclaredMethods()).isEmpty();
   }
+
+  @Test
+  void none_is_workerFunction() {
+    assertThat(WorkerFunction.NONE).isInstanceOf(WorkerFunction.class);
+  }
+
+  @Test
+  void none_is_not_sync() {
+    assertThat(WorkerFunction.NONE).isNotInstanceOf(WorkerFunction.Sync.class);
+  }
+
+  @Test
+  void none_singleton_equals_new_instance() {
+    assertThat(WorkerFunction.NONE).isEqualTo(new WorkerFunction.None());
+  }
+
+  @Test
+  void none_is_same_reference_across_accesses() {
+    assertThat(WorkerFunction.NONE).isSameAs(WorkerFunction.NONE);
+  }
 }

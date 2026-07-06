@@ -19,10 +19,33 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class WorkerExecutorTest {
 
-    private final DefaultWorkerExecutor executor = new DefaultWorkerExecutor(new DefaultPolicyEnforcer());
+    private static final String REQUIRE_NAME_SCHEMA = """
+        {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" }
+          },
+          "required": ["name"]
+        }""";
+
+    private static final String REQUIRE_RESULT_SCHEMA = """
+        {
+          "type": "object",
+          "properties": {
+            "result": { "type": "number" }
+          },
+          "required": ["result"]
+        }""";
+
+    private final DefaultWorkerExecutor executor =
+        new DefaultWorkerExecutor(new DefaultPolicyEnforcer(), new SchemaValidator());
 
     private static Capability cap(String name) {
         return Capability.of(name, "{}", "{}");
+    }
+
+    private static Capability cap(String name, String inputSchema, String outputSchema) {
+        return Capability.of(name, inputSchema, outputSchema);
     }
 
     @Test
@@ -146,5 +169,99 @@ class WorkerExecutorTest {
         assertThatThrownBy(() -> executor.execute(worker, cap("ext"), Map.of()))
             .isInstanceOf(UnsupportedOperationException.class)
             .hasMessageContaining("Sync");
+    }
+
+    // --- Schema validation tests ---
+
+    @Test
+    void execute_invalidInput_returnsFailed_functionNeverCalled() {
+        AtomicInteger callCount = new AtomicInteger(0);
+        Worker worker = Worker.builder()
+            .name("strict").capabilityName("validate")
+            .function(new WorkerFunction.Sync(input -> {
+                callCount.incrementAndGet();
+                return WorkerResult.of(Map.of());
+            }))
+            .build();
+
+        WorkerResult result = executor.execute(worker,
+            cap("validate", REQUIRE_NAME_SCHEMA, "{}"),
+            Map.of("age", 30));
+
+        assertThat(result.outcome()).isInstanceOf(WorkerOutcome.Failed.class);
+        assertThat(((WorkerOutcome.Failed) result.outcome()).reason()).contains("name");
+        assertThat(callCount.get()).isZero();
+    }
+
+    @Test
+    void execute_validInput_invalidOutput_returnsSuccessWithWarning() {
+        Worker worker = Worker.builder()
+            .name("bad-output").capabilityName("compute")
+            .function(new WorkerFunction.Sync(input ->
+                WorkerResult.of(Map.of("result", "not-a-number"))))
+            .build();
+
+        WorkerResult result = executor.execute(worker,
+            cap("compute", "{}", REQUIRE_RESULT_SCHEMA),
+            Map.of());
+
+        assertThat(result.outcome()).isInstanceOf(WorkerOutcome.Success.class);
+        assertThat(result.output()).containsEntry("result", "not-a-number");
+    }
+
+    @Test
+    void execute_malformedSchema_throwsIAE() {
+        Worker worker = Worker.builder()
+            .name("broken").capabilityName("bad")
+            .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of())))
+            .build();
+
+        assertThatThrownBy(() -> executor.execute(worker,
+                cap("bad", "not valid json", "{}"), Map.of()))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void execute_declinedWithPartialOutput_noOutputValidation() {
+        Worker worker = Worker.builder()
+            .name("decliner").capabilityName("dec")
+            .function(new WorkerFunction.Sync(input ->
+                WorkerResult.declined("nope", Map.of("partial", "data"))))
+            .build();
+
+        WorkerResult result = executor.execute(worker,
+            cap("dec", "{}", REQUIRE_RESULT_SCHEMA),
+            Map.of());
+
+        assertThat(result.outcome()).isInstanceOf(WorkerOutcome.Declined.class);
+        assertThat(result.output()).containsEntry("partial", "data");
+    }
+
+    @Test
+    void execute_failedWithPartialOutput_noOutputValidation() {
+        Worker worker = Worker.builder()
+            .name("failer").capabilityName("fail")
+            .function(new WorkerFunction.Sync(input ->
+                WorkerResult.failed("error", Map.of("partial", "data"))))
+            .build();
+
+        WorkerResult result = executor.execute(worker,
+            cap("fail", "{}", REQUIRE_RESULT_SCHEMA),
+            Map.of());
+
+        assertThat(result.outcome()).isInstanceOf(WorkerOutcome.Failed.class);
+        assertThat(result.output()).containsEntry("partial", "data");
+    }
+
+    @Test
+    void execute_emptySchemas_noValidation() {
+        Worker worker = Worker.builder()
+            .name("legacy").capabilityName("old")
+            .function(new WorkerFunction.Sync(input ->
+                WorkerResult.of(Map.of("anything", "goes"))))
+            .build();
+
+        WorkerResult result = executor.execute(worker, cap("old"), Map.of("random", 42));
+        assertThat(result.outcome()).isInstanceOf(WorkerOutcome.Success.class);
     }
 }

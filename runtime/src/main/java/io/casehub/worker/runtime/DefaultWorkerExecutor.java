@@ -6,6 +6,7 @@ import io.casehub.platform.governance.InterruptedPolicyException;
 import io.casehub.worker.api.Capability;
 import io.casehub.worker.api.Worker;
 import io.casehub.worker.api.WorkerFunction;
+import io.casehub.worker.api.WorkerOutcome;
 import io.casehub.worker.api.WorkerResult;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
@@ -18,17 +19,22 @@ import jakarta.inject.Inject;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 @ApplicationScoped
 public class DefaultWorkerExecutor implements WorkerExecutor {
 
     private static final String INSTRUMENTATION_NAME = "io.casehub.worker";
+    private static final org.jboss.logging.Logger LOG =
+        org.jboss.logging.Logger.getLogger(DefaultWorkerExecutor.class);
 
     private final PolicyEnforcer policyEnforcer;
+    private final SchemaValidator schemaValidator;
 
     @Inject
-    public DefaultWorkerExecutor(PolicyEnforcer policyEnforcer) {
+    public DefaultWorkerExecutor(PolicyEnforcer policyEnforcer, SchemaValidator schemaValidator) {
         this.policyEnforcer = policyEnforcer;
+        this.schemaValidator = schemaValidator;
     }
 
     @Override
@@ -45,15 +51,39 @@ public class DefaultWorkerExecutor implements WorkerExecutor {
                     + worker.function().getClass().getName());
         }
 
+        schemaValidator.ensureSchemaParsed(capability.inputSchema());
+        schemaValidator.ensureSchemaParsed(capability.outputSchema());
+
         Span span = GlobalOpenTelemetry.getTracer(INSTRUMENTATION_NAME)
             .spanBuilder("worker.execute")
             .setAttribute(AttributeKey.stringKey("worker.name"), worker.name())
             .setAttribute(AttributeKey.stringKey("worker.capability"), capability.name())
             .startSpan();
         try (Scope ignored = span.makeCurrent()) {
+            Optional<String> inputError = schemaValidator.validateInput(capability, input);
+            if (inputError.isPresent()) {
+                span.addEvent("worker.input.invalid", Attributes.of(
+                    AttributeKey.stringKey("validation.error"), inputError.get()));
+                WorkerResult result = WorkerResult.failed(inputError.get());
+                span.setAttribute(AttributeKey.stringKey("worker.outcome"),
+                    result.outcome().getClass().getSimpleName());
+                return result;
+            }
+
             WorkerResult result = policyEnforcer.execute(
                 worker.executionPolicy(),
                 () -> sync.fn().apply(input));
+
+            if (result.outcome() instanceof WorkerOutcome.Success) {
+                Optional<String> outputError = schemaValidator.validateOutput(capability, result.output());
+                if (outputError.isPresent()) {
+                    span.addEvent("worker.output.invalid", Attributes.of(
+                        AttributeKey.stringKey("validation.error"), outputError.get()));
+                    LOG.warnf("Output schema violation for worker '%s' capability '%s': %s",
+                        worker.name(), capability.name(), outputError.get());
+                }
+            }
+
             span.setAttribute(AttributeKey.stringKey("worker.outcome"),
                 result.outcome().getClass().getSimpleName());
             return result;

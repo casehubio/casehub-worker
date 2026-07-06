@@ -30,4 +30,16 @@ public final class TestWorkerBuilder {
         Capability capability = Capability.of(name, "{}", "{}");
         return new WorkerWithCapability(worker, capability);
     }
+
+    public static WorkerWithCapability syncWithCapability(String name,
+            String inputSchema, String outputSchema,
+            Function<Map<String, Object>, WorkerResult> fn) {
+        Worker worker = Worker.builder()
+            .name(name)
+            .capabilityName(name)
+            .function(fn)
+            .build();
+        Capability capability = Capability.of(name, inputSchema, outputSchema);
+        return new WorkerWithCapability(worker, capability);
+    }
 }

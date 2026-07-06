@@ -2,6 +2,7 @@ package io.casehub.worker.testing;
 
 import io.casehub.worker.api.Capability;
 import io.casehub.worker.api.Worker;
+import io.casehub.worker.api.WorkerFunction;
 import io.casehub.worker.api.WorkerResult;
 import io.casehub.worker.runtime.WorkerExecutor;
 import io.quarkus.arc.DefaultBean;
@@ -30,8 +31,13 @@ public class MockWorkerExecutor implements WorkerExecutor {
         executionCount.incrementAndGet();
         lastWorkerName.set(worker.name());
         lastCapabilityName.set(capability.name());
+        if (!(worker.function() instanceof WorkerFunction.Sync sync)) {
+            throw new UnsupportedOperationException(
+                "MockWorkerExecutor supports Sync functions only, got: "
+                    + worker.function().getClass().getName());
+        }
         try {
-            return ((io.casehub.worker.api.WorkerFunction.Sync) worker.function()).fn().apply(input);
+            return sync.fn().apply(input);
         } catch (Exception e) {
             String message = e.getMessage();
             if (message == null) message = e.getClass().getName();

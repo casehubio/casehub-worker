@@ -89,4 +89,28 @@ class MockWorkerExecutorTest {
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("wrong");
     }
+
+    @Test
+    void execute_nullCapability_throwsNPE() {
+        MockWorkerExecutor executor = new MockWorkerExecutor();
+        Worker worker = TestWorkerBuilder.sync("w",
+            input -> WorkerResult.of(Map.of()));
+
+        assertThatThrownBy(() -> executor.execute(worker, null, Map.of()))
+            .isInstanceOf(NullPointerException.class)
+            .hasMessageContaining("capability");
+    }
+
+    @Test
+    void execute_nonSyncFunction_throwsUnsupported() {
+        MockWorkerExecutor executor = new MockWorkerExecutor();
+        Worker worker = Worker.builder()
+            .name("external").capabilityName("ext")
+            .noFunction()
+            .build();
+
+        assertThatThrownBy(() -> executor.execute(worker, cap("ext"), Map.of()))
+            .isInstanceOf(UnsupportedOperationException.class)
+            .hasMessageContaining("Sync");
+    }
 }

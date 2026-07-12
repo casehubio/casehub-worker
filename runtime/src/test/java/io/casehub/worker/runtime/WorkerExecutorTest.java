@@ -52,7 +52,7 @@ class WorkerExecutorTest {
     void execute_successfulWorker() {
         Worker worker = Worker.builder()
             .name("greet").capabilityName("greet")
-            .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of("greeting", "hello " + input.get("name")))))
+            .function(new WorkerFunction.Sync<>(Map.class,input -> WorkerResult.of(Map.of("greeting", "hello " + input.get("name")))))
             .build();
 
         WorkerResult result = executor.execute(worker, cap("greet"), Map.of("name", "world"));
@@ -65,7 +65,7 @@ class WorkerExecutorTest {
         AtomicInteger attempts = new AtomicInteger(0);
         Worker worker = Worker.builder()
             .name("flaky").capabilityName("process")
-            .function(new WorkerFunction.Sync(input -> {
+            .function(new WorkerFunction.Sync<>(Map.class,input -> {
                 if (attempts.incrementAndGet() < 3) {
                     throw new RuntimeException("transient");
                 }
@@ -83,7 +83,7 @@ class WorkerExecutorTest {
     void execute_exhaustsRetries_returnsFailed() {
         Worker worker = Worker.builder()
             .name("broken").capabilityName("fail")
-            .function(new WorkerFunction.Sync(input -> { throw new RuntimeException("permanent"); }))
+            .function(new WorkerFunction.Sync<>(Map.class,input -> { throw new RuntimeException("permanent"); }))
             .executionPolicy(new ExecutionPolicy(null, new RetryPolicy(2, 10)))
             .build();
 
@@ -96,7 +96,7 @@ class WorkerExecutorTest {
     void execute_workerThrows_returnsFailed() {
         Worker worker = Worker.builder()
             .name("throws").capabilityName("boom")
-            .function(new WorkerFunction.Sync(input -> { throw new IllegalStateException("bad state"); }))
+            .function(new WorkerFunction.Sync<>(Map.class,input -> { throw new IllegalStateException("bad state"); }))
             .build();
 
         WorkerResult result = executor.execute(worker, cap("boom"), Map.of());
@@ -108,7 +108,7 @@ class WorkerExecutorTest {
     void execute_timeout_returnsExpired() {
         Worker worker = Worker.builder()
             .name("slow").capabilityName("crawl")
-            .function(new WorkerFunction.Sync(input -> {
+            .function(new WorkerFunction.Sync<>(Map.class,input -> {
                 try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
                 return WorkerResult.of(Map.of());
             }))
@@ -124,7 +124,7 @@ class WorkerExecutorTest {
     void execute_workerThrowsNullMessage_returnsFailedWithClassName() {
         Worker worker = Worker.builder()
             .name("npe").capabilityName("null")
-            .function(new WorkerFunction.Sync(input -> { throw new NullPointerException(); }))
+            .function(new WorkerFunction.Sync<>(Map.class,input -> { throw new NullPointerException(); }))
             .build();
 
         WorkerResult result = executor.execute(worker, cap("null"), Map.of());
@@ -138,7 +138,7 @@ class WorkerExecutorTest {
     void execute_nullCapability_throwsNPE() {
         Worker worker = Worker.builder()
             .name("w").capabilityName("c")
-            .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of())))
+            .function(new WorkerFunction.Sync<>(Map.class,input -> WorkerResult.of(Map.of())))
             .build();
 
         assertThatThrownBy(() -> executor.execute(worker, null, Map.of()))
@@ -150,7 +150,7 @@ class WorkerExecutorTest {
     void execute_capabilityNotInWorker_throwsIAE() {
         Worker worker = Worker.builder()
             .name("w").capabilityName("supported")
-            .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of())))
+            .function(new WorkerFunction.Sync<>(Map.class,input -> WorkerResult.of(Map.of())))
             .build();
 
         assertThatThrownBy(() -> executor.execute(worker, cap("unsupported"), Map.of()))
@@ -178,7 +178,7 @@ class WorkerExecutorTest {
         AtomicInteger callCount = new AtomicInteger(0);
         Worker worker = Worker.builder()
             .name("strict").capabilityName("validate")
-            .function(new WorkerFunction.Sync(input -> {
+            .function(new WorkerFunction.Sync<>(Map.class,input -> {
                 callCount.incrementAndGet();
                 return WorkerResult.of(Map.of());
             }))
@@ -197,7 +197,7 @@ class WorkerExecutorTest {
     void execute_validInput_invalidOutput_returnsSuccessWithWarning() {
         Worker worker = Worker.builder()
             .name("bad-output").capabilityName("compute")
-            .function(new WorkerFunction.Sync(input ->
+            .function(new WorkerFunction.Sync<>(Map.class,input ->
                 WorkerResult.of(Map.of("result", "not-a-number"))))
             .build();
 
@@ -213,7 +213,7 @@ class WorkerExecutorTest {
     void execute_malformedSchema_throwsIAE() {
         Worker worker = Worker.builder()
             .name("broken").capabilityName("bad")
-            .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of())))
+            .function(new WorkerFunction.Sync<>(Map.class,input -> WorkerResult.of(Map.of())))
             .build();
 
         assertThatThrownBy(() -> executor.execute(worker,
@@ -225,7 +225,7 @@ class WorkerExecutorTest {
     void execute_declinedWithPartialOutput_noOutputValidation() {
         Worker worker = Worker.builder()
             .name("decliner").capabilityName("dec")
-            .function(new WorkerFunction.Sync(input ->
+            .function(new WorkerFunction.Sync<>(Map.class,input ->
                 WorkerResult.declined("nope", Map.of("partial", "data"))))
             .build();
 
@@ -241,7 +241,7 @@ class WorkerExecutorTest {
     void execute_failedWithPartialOutput_noOutputValidation() {
         Worker worker = Worker.builder()
             .name("failer").capabilityName("fail")
-            .function(new WorkerFunction.Sync(input ->
+            .function(new WorkerFunction.Sync<>(Map.class,input ->
                 WorkerResult.failed("error", Map.of("partial", "data"))))
             .build();
 
@@ -257,7 +257,7 @@ class WorkerExecutorTest {
     void execute_emptySchemas_noValidation() {
         Worker worker = Worker.builder()
             .name("legacy").capabilityName("old")
-            .function(new WorkerFunction.Sync(input ->
+            .function(new WorkerFunction.Sync<>(Map.class,input ->
                 WorkerResult.of(Map.of("anything", "goes"))))
             .build();
 

@@ -15,15 +15,16 @@ class WorkerTest {
     @Test
     void syncWorker_executesFunction() {
         Worker worker = Worker.builder()
-            .name("test-worker")
-            .capabilityName("process")
-            .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of("result", "done"))))
-            .build();
+                              .name("test-worker")
+                              .capabilityName("process")
+                              .function(input -> WorkerResult.of(Map.of("result", "done")))
+                              .build();
 
         assertThat(worker.name()).isEqualTo("test-worker");
         assertThat(worker.capabilityNames()).containsExactly("process");
 
-        WorkerResult result = ((WorkerFunction.Sync) worker.function()).fn().apply(Map.of());
+        WorkerFunction.Sync<?> sync   = (WorkerFunction.Sync<?>) worker.function();
+        WorkerResult           result = ((WorkerFunction.Sync<Map<String, Object>>) worker.function()).fn().apply(Map.of());
         assertThat(result.outcome()).isInstanceOf(WorkerOutcome.Success.class);
         assertThat(result.output()).containsEntry("result", "done");
     }
@@ -31,23 +32,23 @@ class WorkerTest {
     @Test
     void capabilityNames_isUnmodifiableSet() {
         Worker worker = Worker.builder()
-            .name("w")
-            .capabilityNames("a", "b", "c")
-            .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of())))
-            .build();
+                              .name("w")
+                              .capabilityNames("a", "b", "c")
+                              .function(input -> WorkerResult.of(Map.of()))
+                              .build();
 
         assertThat(worker.capabilityNames()).containsExactlyInAnyOrder("a", "b", "c");
         assertThatThrownBy(() -> worker.capabilityNames().add("d"))
-            .isInstanceOf(UnsupportedOperationException.class);
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
     void capabilityNames_fromCollection() {
         Worker worker = Worker.builder()
-            .name("w")
-            .capabilityNames(java.util.List.of("x", "y"))
-            .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of())))
-            .build();
+                              .name("w")
+                              .capabilityNames(java.util.List.of("x", "y"))
+                              .function(input -> WorkerResult.of(Map.of()))
+                              .build();
 
         assertThat(worker.capabilityNames()).containsExactlyInAnyOrder("x", "y");
     }
@@ -55,11 +56,11 @@ class WorkerTest {
     @Test
     void capabilityNames_rejectsNull() {
         assertThatThrownBy(() -> Worker.builder()
-            .name("w")
-            .capabilityNames((java.util.Collection<String>) null)
-            .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of())))
-            .build())
-            .isInstanceOf(NullPointerException.class);
+                                       .name("w")
+                                       .capabilityNames((java.util.Collection<String>) null)
+                                       .function(input -> WorkerResult.of(Map.of()))
+                                       .build())
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -77,10 +78,10 @@ class WorkerTest {
     @Test
     void worker_defaultExecutionPolicy() {
         Worker worker = Worker.builder()
-            .name("default-policy")
-            .capabilityName("test")
-            .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of())))
-            .build();
+                              .name("default-policy")
+                              .capabilityName("test")
+                              .function(input -> WorkerResult.of(Map.of()))
+                              .build();
 
         assertThat(worker.executionPolicy()).isNotNull();
         assertThat(worker.executionPolicy().retries().maxAttempts()).isEqualTo(3);
@@ -89,14 +90,14 @@ class WorkerTest {
     @Test
     void worker_customExecutionPolicy() {
         ExecutionPolicy policy = new ExecutionPolicy(5000,
-            new RetryPolicy(5, 500, BackoffStrategy.EXPONENTIAL));
+                                                     new RetryPolicy(5, 500, BackoffStrategy.EXPONENTIAL));
 
         Worker worker = Worker.builder()
-            .name("custom-policy")
-            .capabilityName("test")
-            .function(new WorkerFunction.Sync(input -> WorkerResult.of(Map.of())))
-            .executionPolicy(policy)
-            .build();
+                              .name("custom-policy")
+                              .capabilityName("test")
+                              .function(input -> WorkerResult.of(Map.of()))
+                              .executionPolicy(policy)
+                              .build();
 
         assertThat(worker.executionPolicy().timeoutMs()).isEqualTo(5000);
         assertThat(worker.executionPolicy().retries().maxAttempts()).isEqualTo(5);
@@ -211,4 +212,46 @@ class WorkerTest {
         assertThatThrownBy(() -> WorkerResult.expired("reason", (Map<String, Object>) null))
             .isInstanceOf(NullPointerException.class);
     }
+
+    @Test
+    void fnApplyCreatesTypedSyncFunction() {
+        record TestInput(String value) {}
+
+        Worker worker = Worker.builder()
+                              .name("test")
+                              .capabilityName("cap")
+                              .<TestInput>fn()
+                              .apply(input -> WorkerResult.of(Map.of("v", input.value())))
+                              .build();
+
+        assertThat(worker.function()).isInstanceOf(WorkerFunction.Sync.class);
+        WorkerFunction.Sync<?> sync = (WorkerFunction.Sync<?>) worker.function();
+        assertThat(sync.inputType()).isEqualTo(TestInput.class);
+    }
+
+    @Test
+    void fnApplyWithMapTypeResolvesMapClass() {
+        Worker worker = Worker.builder()
+                              .name("test")
+                              .capabilityName("cap")
+                              .<Map<String, Object>>fn()
+                              .apply(input -> WorkerResult.of(input))
+                              .build();
+
+        WorkerFunction.Sync<?> sync = (WorkerFunction.Sync<?>) worker.function();
+        assertThat(sync.inputType()).isEqualTo(Map.class);
+    }
+
+    @Test
+    void legacyFunctionStillWorks() {
+        Worker worker = Worker.builder()
+                              .name("test")
+                              .capabilityName("cap")
+                              .function(input -> WorkerResult.of(input))
+                              .build();
+
+        WorkerFunction.Sync<?> sync = (WorkerFunction.Sync<?>) worker.function();
+        assertThat(sync.inputType()).isEqualTo(Map.class);
+    }
+
 }

@@ -1,15 +1,23 @@
 package io.casehub.worker.api;
 
-import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
-public interface WorkerFunction {
+public interface WorkerFunction<T> {
 
-    WorkerFunction NONE = new None();
+    WorkerFunction<Void> NONE = new None();
 
-    record Sync(Function<Map<String, Object>, WorkerResult> fn) implements WorkerFunction {
+    Class<T> inputType();
+
+    record Sync<T>(Class<T> inputType, Function<T, WorkerResult> fn) implements WorkerFunction<T> {
+        public Sync {
+            Objects.requireNonNull(inputType, "inputType must not be null");
+            Objects.requireNonNull(fn, "fn must not be null");
+        }
     }
 
-    record None() implements WorkerFunction {
+    record None() implements WorkerFunction<Void> {
+        @Override
+        public Class<Void> inputType() { return Void.class; }
     }
 }

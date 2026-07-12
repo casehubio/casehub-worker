@@ -20,12 +20,13 @@ public class MockWorkerExecutor implements WorkerExecutor {
     private final AtomicReference<String> lastWorkerName = new AtomicReference<>();
     private final AtomicReference<String> lastCapabilityName = new AtomicReference<>();
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public WorkerResult execute(Worker worker, Capability capability, Map<String, Object> input) {
         Objects.requireNonNull(capability, "capability");
         if (!worker.capabilityNames().contains(capability.name())) {
             throw new IllegalArgumentException(
-                "Capability '" + capability.name() + "' not in worker '"
+                    "Capability '" + capability.name() + "' not in worker '"
                     + worker.name() + "' capabilities: " + worker.capabilityNames());
         }
         executionCount.incrementAndGet();
@@ -33,14 +34,14 @@ public class MockWorkerExecutor implements WorkerExecutor {
         lastCapabilityName.set(capability.name());
         if (!(worker.function() instanceof WorkerFunction.Sync sync)) {
             throw new UnsupportedOperationException(
-                "MockWorkerExecutor supports Sync functions only, got: "
+                    "MockWorkerExecutor supports Sync functions only, got: "
                     + worker.function().getClass().getName());
         }
         try {
-            return sync.fn().apply(input);
+            return ((java.util.function.Function<Map<String, Object>, WorkerResult>) sync.fn()).apply(input);
         } catch (Exception e) {
             String message = e.getMessage();
-            if (message == null) message = e.getClass().getName();
+            if (message == null) {message = e.getClass().getName();}
             return WorkerResult.failed(message);
         }
     }

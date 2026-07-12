@@ -32,10 +32,21 @@ public record Worker(String name, Set<String> capabilityNames, WorkerFunction fu
         public Builder capabilityNames(Collection<String> names) { this.capabilityNames = new LinkedHashSet<>(names); return this; }
         public Builder capabilityName(String name) { this.capabilityNames = Set.of(name); return this; }
         public Builder function(WorkerFunction f) { this.function = f; return this; }
+
+        @SuppressWarnings("unchecked")
         public Builder function(java.util.function.Function<java.util.Map<String, Object>, WorkerResult> fn) {
-            this.function = new WorkerFunction.Sync(fn);
+            this.function = new WorkerFunction.Sync<>((Class) java.util.Map.class, fn);
             return this;
         }
+
+        @SafeVarargs
+        public final <T> TypedFunctionBuilder<T> fn(T... typeToken) {
+            Class<?> runtimeType = typeToken.getClass().getComponentType();
+            return new TypedFunctionBuilder<>(this, runtimeType);
+        }
+
+        void setFunction(WorkerFunction<?> f) {this.function = f;}
+
         public Builder noFunction() { this.function = WorkerFunction.NONE; return this; }
         public Builder executionPolicy(ExecutionPolicy p) { this.executionPolicy = p; return this; }
         public Builder description(String d) { this.description = d; return this; }

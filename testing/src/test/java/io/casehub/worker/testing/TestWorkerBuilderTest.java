@@ -27,7 +27,8 @@ class TestWorkerBuilderTest {
         var wc = TestWorkerBuilder.syncWithCapability("echo",
             input -> WorkerResult.of(input));
 
-        var result = ((io.casehub.worker.api.WorkerFunction.Sync) wc.worker().function())
+        @SuppressWarnings("unchecked")
+        var result = ((io.casehub.worker.api.WorkerFunction.Sync<Map<String, Object>>) wc.worker().function())
             .fn().apply(Map.of("key", "value"));
         assertThat(result.outcome()).isInstanceOf(WorkerOutcome.Success.class);
         assertThat(result.output()).containsEntry("key", "value");

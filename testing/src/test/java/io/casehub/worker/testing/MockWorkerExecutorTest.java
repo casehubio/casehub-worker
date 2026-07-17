@@ -23,9 +23,10 @@ class MockWorkerExecutorTest {
     void execute_bypassesPolicyEnforcement() {
         MockWorkerExecutor executor = new MockWorkerExecutor();
         var wc = TestWorkerBuilder.syncWithCapability("test",
-            input -> WorkerResult.of(Map.of("ok", true)));
+                                                      input -> WorkerResult.of(Map.of("ok", true)));
 
-        WorkerResult result = executor.execute(wc.worker(), wc.capability(), Map.of());
+        WorkerResult result = executor.execute(wc.worker(), wc.capability(), Map.of())
+                                      .await().indefinitely();
         assertThat(result.outcome()).isInstanceOf(WorkerOutcome.Success.class);
         assertThat(executor.executionCount()).isEqualTo(1);
         assertThat(executor.lastWorkerName()).isEqualTo("test");
@@ -36,9 +37,10 @@ class MockWorkerExecutorTest {
     void execute_workerThrows_returnsFailed() {
         MockWorkerExecutor executor = new MockWorkerExecutor();
         Worker worker = TestWorkerBuilder.sync("throws",
-            input -> { throw new RuntimeException("mock failure"); });
+                                               input -> {throw new RuntimeException("mock failure");});
 
-        WorkerResult result = executor.execute(worker, cap("throws"), Map.of());
+        WorkerResult result = executor.execute(worker, cap("throws"), Map.of())
+                                      .await().indefinitely();
         assertThat(result.outcome()).isInstanceOf(WorkerOutcome.Failed.class);
         assertThat(((WorkerOutcome.Failed) result.outcome()).reason()).isEqualTo("mock failure");
         assertThat(executor.executionCount()).isEqualTo(1);
@@ -48,21 +50,22 @@ class MockWorkerExecutorTest {
     void execute_workerThrowsNullMessage_returnsFailedWithClassName() {
         MockWorkerExecutor executor = new MockWorkerExecutor();
         Worker worker = TestWorkerBuilder.sync("npe",
-            input -> { throw new NullPointerException(); });
+                                               input -> {throw new NullPointerException();});
 
-        WorkerResult result = executor.execute(worker, cap("npe"), Map.of());
+        WorkerResult result = executor.execute(worker, cap("npe"), Map.of())
+                                      .await().indefinitely();
         assertThat(result.outcome()).isInstanceOf(WorkerOutcome.Failed.class);
         assertThat(((WorkerOutcome.Failed) result.outcome()).reason())
-            .isEqualTo("java.lang.NullPointerException");
+                .isEqualTo("java.lang.NullPointerException");
     }
 
     @Test
     void execute_tracksCapabilityName() {
         MockWorkerExecutor executor = new MockWorkerExecutor();
         var wc = TestWorkerBuilder.syncWithCapability("worker",
-            input -> WorkerResult.of(Map.of()));
+                                                      input -> WorkerResult.of(Map.of()));
 
-        executor.execute(wc.worker(), wc.capability(), Map.of());
+        executor.execute(wc.worker(), wc.capability(), Map.of()).await().indefinitely();
         assertThat(executor.lastCapabilityName()).isEqualTo("worker");
     }
 
@@ -70,9 +73,9 @@ class MockWorkerExecutorTest {
     void reset_clearsCapabilityName() {
         MockWorkerExecutor executor = new MockWorkerExecutor();
         var wc = TestWorkerBuilder.syncWithCapability("worker",
-            input -> WorkerResult.of(Map.of()));
+                                                      input -> WorkerResult.of(Map.of()));
 
-        executor.execute(wc.worker(), wc.capability(), Map.of());
+        executor.execute(wc.worker(), wc.capability(), Map.of()).await().indefinitely();
         assertThat(executor.lastCapabilityName()).isEqualTo("worker");
 
         executor.reset();
@@ -104,16 +107,16 @@ class MockWorkerExecutorTest {
     }
 
     @Test
-    void execute_nonSyncFunction_throwsUnsupported() {
+    void execute_nonSyncOrAsyncFunction_throwsUnsupported() {
         MockWorkerExecutor executor = new MockWorkerExecutor();
         Worker worker = Worker.builder()
-            .name("external").capabilityName("ext")
-            .noFunction()
-            .build();
+                              .name("external").capabilityName("ext")
+                              .noFunction()
+                              .build();
 
         assertThatThrownBy(() -> executor.execute(worker, cap("ext"), Map.of()))
-            .isInstanceOf(UnsupportedOperationException.class)
-            .hasMessageContaining("Sync");
+                .isInstanceOf(UnsupportedOperationException.class)
+                .hasMessageContaining("Sync and Async");
     }
 
     @Test
@@ -124,7 +127,8 @@ class MockWorkerExecutorTest {
                               .<TestPojo>fn().apply(pojo -> WorkerResult.of(Map.of("greeting", "hello " + pojo.name())))
                               .build();
 
-        WorkerResult result = executor.execute(worker, cap("process"), new TestPojo("alice", 30));
+        WorkerResult result = executor.execute(worker, cap("process"), new TestPojo("alice", 30))
+                                      .await().indefinitely();
         assertThat(result.outcome()).isInstanceOf(WorkerOutcome.Success.class);
         assertThat(result.output()).containsEntry("greeting", "hello alice");
     }

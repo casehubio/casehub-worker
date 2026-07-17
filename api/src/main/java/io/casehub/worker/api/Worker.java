@@ -39,6 +39,13 @@ public record Worker(String name, Set<String> capabilityNames, WorkerFunction fu
             return this;
         }
 
+        @SuppressWarnings("unchecked")
+        public Builder asyncFunction(java.util.function.Function<java.util.Map<String, Object>, java.util.concurrent.CompletionStage<WorkerResult>> fn) {
+            this.function = new WorkerFunction.Async<>((Class) java.util.Map.class, fn);
+            return this;
+        }
+
+
         @SafeVarargs
         public final <T> TypedFunctionBuilder<T> fn(T... typeToken) {
             Class<?> runtimeType = typeToken.getClass().getComponentType();

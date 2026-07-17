@@ -16,6 +16,15 @@ public interface WorkerFunction<T> {
         }
     }
 
+    record Async<T>(Class<T> inputType,
+                    java.util.function.Function<T, java.util.concurrent.CompletionStage<WorkerResult>> fn) implements WorkerFunction<T> {
+        public Async {
+            Objects.requireNonNull(inputType, "inputType must not be null");
+            Objects.requireNonNull(fn, "fn must not be null");
+        }
+    }
+
+
     record None() implements WorkerFunction<Void> {
         @Override
         public Class<Void> inputType() { return Void.class; }

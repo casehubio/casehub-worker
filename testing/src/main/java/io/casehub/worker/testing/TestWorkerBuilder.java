@@ -42,4 +42,35 @@ public final class TestWorkerBuilder {
         Capability capability = Capability.of(name, inputSchema, outputSchema);
         return new WorkerWithCapability(worker, capability);
     }
+
+    public static Worker async(String name,
+                               Function<Map<String, Object>, java.util.concurrent.CompletionStage<WorkerResult>> fn) {
+        return Worker.builder()
+                     .name(name).capabilityName(name)
+                     .asyncFunction(fn)
+                     .build();
+    }
+
+    public static WorkerWithCapability asyncWithCapability(String name,
+                                                           Function<Map<String, Object>, java.util.concurrent.CompletionStage<WorkerResult>> fn) {
+        Worker worker = Worker.builder()
+                              .name(name).capabilityName(name)
+                              .asyncFunction(fn)
+                              .build();
+        Capability capability = Capability.of(name, "{}", "{}");
+        return new WorkerWithCapability(worker, capability);
+    }
+
+    public static WorkerWithCapability asyncWithCapability(String name,
+                                                           String inputSchema, String outputSchema,
+                                                           Function<Map<String, Object>, java.util.concurrent.CompletionStage<WorkerResult>> fn) {
+        Worker worker = Worker.builder()
+                              .name(name).capabilityName(name)
+                              .asyncFunction(fn)
+                              .build();
+        Capability capability = Capability.of(name, inputSchema, outputSchema);
+        return new WorkerWithCapability(worker, capability);
+    }
+
+
 }

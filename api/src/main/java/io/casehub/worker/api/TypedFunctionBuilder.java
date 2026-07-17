@@ -16,4 +16,11 @@ public class TypedFunctionBuilder<T> {
         parent.setFunction(new WorkerFunction.Sync(runtimeType, fn));
         return parent;
     }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public Worker.Builder applyAsync(Function<T, java.util.concurrent.CompletionStage<WorkerResult>> fn) {
+        parent.setFunction(new WorkerFunction.Async(runtimeType, fn));
+        return parent;
+    }
+
 }

@@ -7,3 +7,5 @@ target/
 .DS_Store
 wksp
 proj
+.claude
+package-lock.json

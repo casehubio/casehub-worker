@@ -25,4 +25,19 @@ public interface WorkerFunction<T, R> {
         @Override
         public Class<Void> outputType() {return Void.class;}
     }
+
+    record Persistent<T>(Class<T> inputType,
+                         java.util.function.Consumer<PersistentScope<T>> handler)
+            implements WorkerFunction<T, Void> {
+        public Persistent {
+            java.util.Objects.requireNonNull(inputType, "inputType must not be null");
+            java.util.Objects.requireNonNull(handler, "handler must not be null");
+        }
+
+        @Override
+        public Class<Void> outputType() {
+            return Void.class;
+        }
+    }
+
 }

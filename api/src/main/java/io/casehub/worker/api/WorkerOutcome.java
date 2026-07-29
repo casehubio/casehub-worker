@@ -15,4 +15,9 @@ public sealed interface WorkerOutcome<R> {
     record Failed<R>(String reason) implements WorkerOutcome<R> {}
 
     record Expired<R>(String reason) implements WorkerOutcome<R> {}
+
+    static <R> WorkerOutcome<R> completed() {return new Completed<>();}
+
+    record Completed<R>() implements WorkerOutcome<R> {}
+
 }

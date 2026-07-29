@@ -33,4 +33,9 @@ public record WorkerResult<R>(R output, WorkerOutcome<R> outcome) {
     public static <R> WorkerResult<R> expired(String reason, R partialOutput) {
         return new WorkerResult<>(partialOutput, new WorkerOutcome.Expired<>(reason));
     }
+
+    public static <R> WorkerResult<R> completed(R output) {
+        return new WorkerResult<>(output, new WorkerOutcome.Completed<>());
+    }
+
 }

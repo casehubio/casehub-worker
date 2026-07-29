@@ -15,4 +15,9 @@ public interface WorkerScope {
     String taskId();
     <T, R> WorkerResult<R> execute(WorkerFunction<T, R> function, T input);
     WorkerResult<?> execute(String workerName, Map<String, Object> input);
+
+    default java.util.Map<String, Object> accumulatedState() {
+        return java.util.Map.of();
+    }
+
 }

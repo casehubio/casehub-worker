@@ -59,6 +59,19 @@ public interface WorkerFunction<T, R> {
         @Override
         @SuppressWarnings("unchecked")
         public Class<Exchange<R>> outputType() {return (Class) Exchange.class;}
+
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        public <S> ExchangeProcessor<T, S> andThen(ExchangeProcessor<R, S> next) {
+            return new ExchangeProcessor<>(bodyInputType, next.bodyOutputType,
+                                           (exchange, scope) -> {
+                                               WorkerResult<Exchange<R>> first = fn.apply(exchange, scope);
+                                               if (!(first.outcome() instanceof WorkerOutcome.Success)) {
+                                                   return (WorkerResult) first;
+                                               }
+                                               return next.fn().apply(first.output(), scope);
+                                           });
+        }
+
     }
 
 

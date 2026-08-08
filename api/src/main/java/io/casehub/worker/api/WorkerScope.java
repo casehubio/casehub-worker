@@ -20,4 +20,17 @@ public interface WorkerScope {
         return java.util.Map.of();
     }
 
+    default <T> DataChannel<T> channel(String name) {
+        throw new UnsupportedOperationException("DataChannel requires engine context");
+    }
+
+    default <T> DataChannel<T> channel(ChannelRef<T> ref) {
+        return channel(ref.name());
+    }
+
+    default <T> ChannelRef<T> createChannel(String name, Class<T> recordType) {
+        throw new UnsupportedOperationException("DataChannel requires engine context");
+    }
+
+
 }

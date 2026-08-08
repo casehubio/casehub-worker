@@ -40,4 +40,26 @@ public interface WorkerFunction<T, R> {
         }
     }
 
+    record ExchangeProcessor<T, R>(
+            Class<T> bodyInputType,
+            Class<R> bodyOutputType,
+            java.util.function.BiFunction<Exchange<T>, WorkerScope, WorkerResult<Exchange<R>>> fn
+    ) implements ExchangeAwareFunction<T, R> {
+
+        public ExchangeProcessor {
+            java.util.Objects.requireNonNull(bodyInputType, "bodyInputType must not be null");
+            java.util.Objects.requireNonNull(bodyOutputType, "bodyOutputType must not be null");
+            java.util.Objects.requireNonNull(fn, "fn must not be null");
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Class<Exchange<T>> inputType() {return (Class) Exchange.class;}
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Class<Exchange<R>> outputType() {return (Class) Exchange.class;}
+    }
+
+
 }

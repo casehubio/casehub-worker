@@ -64,6 +64,19 @@ public record Worker(String name, Set<String> capabilityNames, WorkerFunction<?,
             return new TypedFunctionBuilder<>(this, runtimeType);
         }
 
+        @SuppressWarnings("unchecked")
+        public Builder exchange(java.util.function.BiFunction<Exchange<java.util.Map<String, Object>>, WorkerScope, WorkerResult<Exchange<java.util.Map<String, Object>>>> fn) {
+            this.function = new WorkerFunction.ExchangeProcessor<>((Class) java.util.Map.class, (Class) java.util.Map.class, fn);
+            return this;
+        }
+
+        @SafeVarargs
+        public final <T> ExchangeProcessorBuilder<T> exchange(T... typeToken) {
+            Class<?> runtimeType = typeToken.getClass().getComponentType();
+            return new ExchangeProcessorBuilder<>(this, runtimeType);
+        }
+
+
         void setFunction(WorkerFunction<?, ?> f)          {this.function = f;}
 
         public Builder noFunction()                       {

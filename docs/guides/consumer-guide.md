@@ -32,7 +32,7 @@ Extracted from `casehub-engine-api` so that Workers are a shareable foundation p
 
 ```java
 public record Worker(String name, Set<String> capabilities, WorkerFunction<?, ?> function,
-                     ExecutionPolicy executionPolicy, String description)
+                     ExecutionPolicy executionPolicy, String description, String definitionRef)
 ```
 
 Named automated task. The `function` field holds the executable logic; `capabilities` declares which Capabilities this worker can serve. If `executionPolicy` is null at construction, a default `ExecutionPolicy` is assigned (3 retries).
@@ -51,6 +51,9 @@ Named automated task. The `function` field holds the executable logic; `capabili
 | `noFunction()` | Sets `WorkerFunction.NONE` -- for external/proxy workers |
 | `executionPolicy(ExecutionPolicy)` | Override default retry/timeout policy |
 | `description(String)` | Human-readable description |
+| `definitionRef(String)` | Reference to the case definition that spawned this worker (nullable) |
+| `exchange(BiFunction<Exchange<Map>,WorkerScope,WorkerResult<Exchange<Map>>>)` | Exchange-aware function (Map input/output) |
+| `<T>exchange(T...)` | Typed exchange builder entry point -- returns `ExchangeProcessorBuilder<T>` |
 
 ### WorkerFunction<T, R>
 
@@ -67,6 +70,7 @@ Marker interface parameterised by input type `T` and output type `R`. Four imple
 |---------|--------|-----------|---------|
 | **Sync** | `Sync<T, R>(Class<T>, Class<R>, BiFunction<T, WorkerScope, WorkerResult<R>>)` | Synchronous execution receiving input + scope | Standard worker functions |
 | **Persistent** | `Persistent<T>(Class<T>, Consumer<PersistentScope<T>>)` | Long-running event loop -- blocks on `nextEvent()` | Streaming/stateful workers. Output type is `Void`. |
+| **ExchangeProcessor** | `ExchangeProcessor<T, R>(Class<T>, Class<R>, BiFunction<Exchange<T>, WorkerScope, WorkerResult<Exchange<R>>>)` | Exchange-aware execution with `andThen()` composition | Pipeline workers processing `Exchange` records. Implements `ExchangeAwareFunction<T,R>`. |
 | **None** | `None()` | No-op, `inputType()` and `outputType()` return `Void.class` | External/proxy workers with no local function |
 | **ExchangeProcessor** | `ExchangeProcessor<T, R>(Class<T>, Class<R>, BiFunction<Exchange<T>, WorkerScope, WorkerResult<Exchange<R>>>)` | Exchange-aware execution with headers/properties | Worker-to-worker pipelines via `andThen()` composition |
 

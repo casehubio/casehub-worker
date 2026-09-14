@@ -13,3 +13,9 @@
 - `output` (`java.util.Map<java.lang.String,java.lang.Object>`)
 
 ### `public abstract T nextEvent()`
+
+### `public default void reasoning(java.lang.String reasoning)`
+
+#### Parameters
+
+- `reasoning` (`java.lang.String`)

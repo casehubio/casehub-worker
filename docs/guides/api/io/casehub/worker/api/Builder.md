@@ -6,7 +6,9 @@
 
 ## Fields
 
-### `capabilities` (`java.util.Set<java.lang.String>`)
+### `capabilityNames` (`java.util.Set<java.lang.String>`)
+
+### `definitionRef` (`java.lang.String`)
 
 ### `description` (`java.lang.String`)
 
@@ -42,11 +44,29 @@
 
 - `names` (`java.util.Collection<java.lang.String>`)
 
+### `public io.casehub.worker.api.Worker.Builder definitionRef(java.lang.String ref)`
+
+#### Parameters
+
+- `ref` (`java.lang.String`)
+
 ### `public io.casehub.worker.api.Worker.Builder description(java.lang.String d)`
 
 #### Parameters
 
 - `d` (`java.lang.String`)
+
+### `public final io.casehub.worker.api.ExchangeProcessorBuilder<T> exchange(T[] typeToken)`
+
+#### Parameters
+
+- `typeToken` (`T[]`)
+
+### `public io.casehub.worker.api.Worker.Builder exchange(java.util.function.BiFunction<io.casehub.worker.api.Exchange<java.util.Map<java.lang.String,java.lang.Object>>,io.casehub.worker.api.WorkerScope,io.casehub.worker.api.WorkerResult<io.casehub.worker.api.Exchange<java.util.Map<java.lang.String,java.lang.Object>>>> fn)`
+
+#### Parameters
+
+- `fn` (`java.util.function.BiFunction<io.casehub.worker.api.Exchange<java.util.Map<java.lang.String,java.lang.Object>>,io.casehub.worker.api.WorkerScope,io.casehub.worker.api.WorkerResult<io.casehub.worker.api.Exchange<java.util.Map<java.lang.String,java.lang.Object>>>>`)
 
 ### `public io.casehub.worker.api.Worker.Builder executionPolicy(ExecutionPolicy p)`
 

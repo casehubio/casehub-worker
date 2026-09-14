@@ -26,7 +26,7 @@
 
 ## Constructors
 
-### `public Capability(java.lang.String name, java.lang.String inputSchema, java.lang.String outputSchema, java.lang.String description)`
+### `public Capability(java.lang.String name, java.lang.String inputProjection, java.lang.String outputProjection, java.lang.String description)`
 
 #### Parameters
 
@@ -49,7 +49,7 @@
 
 ### `public final int hashCode()`
 
-### `public java.lang.String inputSchema()`
+### `public java.lang.String inputProjection()`
 
 ### `public java.lang.String name()`
 
@@ -58,9 +58,9 @@
 #### Parameters
 
 - `name` (`java.lang.String`)
-- `inputProjection` (`java.lang.String`)
-- `outputProjection` (`java.lang.String`)
+- `inputSchema` (`java.lang.String`)
+- `outputSchema` (`java.lang.String`)
 
-### `public java.lang.String outputSchema()`
+### `public java.lang.String outputProjection()`
 
 ### `public final java.lang.String toString()`

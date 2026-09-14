@@ -16,6 +16,25 @@ this interface with engine-specific methods (`context()`, `spawnCase()`).
 
 ### `public abstract java.util.UUID caseId()`
 
+### `public default io.casehub.worker.api.DataChannel<T> channel(io.casehub.worker.api.ChannelRef<T> ref)`
+
+#### Parameters
+
+- `ref` (`io.casehub.worker.api.ChannelRef<T>`)
+
+### `public default io.casehub.worker.api.DataChannel<T> channel(java.lang.String name)`
+
+#### Parameters
+
+- `name` (`java.lang.String`)
+
+### `public default io.casehub.worker.api.ChannelRef<T> createChannel(java.lang.String name, java.lang.Class<T> recordType)`
+
+#### Parameters
+
+- `name` (`java.lang.String`)
+- `recordType` (`java.lang.Class<T>`)
+
 ### `public abstract io.casehub.worker.api.WorkerResult<R> execute(io.casehub.worker.api.WorkerFunction<T,R> function, T input)`
 
 #### Parameters

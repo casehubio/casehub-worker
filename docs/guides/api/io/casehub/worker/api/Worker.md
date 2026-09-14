@@ -8,6 +8,8 @@
 
 ### `capabilities` (`java.util.Set<java.lang.String>`)
 
+### `definitionRef` (`java.lang.String`)
+
 ### `description` (`java.lang.String`)
 
 ### `executionPolicy` (`ExecutionPolicy`)
@@ -20,6 +22,8 @@
 
 ### `capabilities` (`java.util.Set<java.lang.String>`)
 
+### `definitionRef` (`java.lang.String`)
+
 ### `description` (`java.lang.String`)
 
 ### `executionPolicy` (`ExecutionPolicy`)
@@ -30,7 +34,7 @@
 
 ## Constructors
 
-### `public Worker(java.lang.String name, java.util.Set<java.lang.String> capabilityNames, io.casehub.worker.api.WorkerFunction<?,?> function, ExecutionPolicy executionPolicy, java.lang.String description)`
+### `public Worker(java.lang.String name, java.util.Set<java.lang.String> capabilities, io.casehub.worker.api.WorkerFunction<?,?> function, ExecutionPolicy executionPolicy, java.lang.String description)`
 
 #### Parameters
 
@@ -40,11 +44,24 @@
 - `executionPolicy` (`ExecutionPolicy`)
 - `description` (`java.lang.String`)
 
+### `public Worker(java.lang.String name, java.util.Set<java.lang.String> capabilities, io.casehub.worker.api.WorkerFunction<?,?> function, ExecutionPolicy executionPolicy, java.lang.String description, java.lang.String definitionRef)`
+
+#### Parameters
+
+- `name` (`java.lang.String`)
+- `capabilities` (`java.util.Set<java.lang.String>`)
+- `function` (`io.casehub.worker.api.WorkerFunction<?,?>`)
+- `executionPolicy` (`ExecutionPolicy`)
+- `description` (`java.lang.String`)
+- `definitionRef` (`java.lang.String`)
+
 ## Methods
 
 ### `public static io.casehub.worker.api.Worker.Builder builder()`
 
-### `public java.util.Set<java.lang.String> capabilityNames()`
+### `public java.util.Set<java.lang.String> capabilities()`
+
+### `public java.lang.String definitionRef()`
 
 ### `public java.lang.String description()`
 

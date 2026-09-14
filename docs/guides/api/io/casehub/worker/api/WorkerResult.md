@@ -10,11 +10,15 @@
 
 ### `output` (`R`)
 
+### `reasoning` (`java.lang.String`)
+
 ## Record Components
 
 ### `outcome` (`io.casehub.worker.api.WorkerOutcome<R>`)
 
 ### `output` (`R`)
+
+### `reasoning` (`java.lang.String`)
 
 ## Constructors
 
@@ -24,6 +28,14 @@
 
 - `output` (`R`)
 - `outcome` (`io.casehub.worker.api.WorkerOutcome<R>`)
+
+### `public WorkerResult(R output, io.casehub.worker.api.WorkerOutcome<R> outcome, java.lang.String reasoning)`
+
+#### Parameters
+
+- `output` (`R`)
+- `outcome` (`io.casehub.worker.api.WorkerOutcome<R>`)
+- `reasoning` (`java.lang.String`)
 
 ## Methods
 
@@ -97,4 +109,12 @@
 
 ### `public R output()`
 
+### `public java.lang.String reasoning()`
+
 ### `public final java.lang.String toString()`
+
+### `public io.casehub.worker.api.WorkerResult<R> withReasoning(java.lang.String reasoning)`
+
+#### Parameters
+
+- `reasoning` (`java.lang.String`)

@@ -11,6 +11,7 @@
     </parent>
 
     <artifactId>casehub-worker-parent</artifactId>
+    <version>${revision}</version>
     <packaging>pom</packaging>
 
     <name>CaseHub Worker</name>

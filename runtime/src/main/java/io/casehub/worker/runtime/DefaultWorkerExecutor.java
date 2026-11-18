@@ -135,6 +135,10 @@ public class DefaultWorkerExecutor implements WorkerExecutor {
             return Uni.createFrom().item(() ->
                                                  (WorkerResult) ((java.util.function.BiFunction) sync.fn()).apply(input, null));
         }
+        if (worker.function() instanceof WorkerFunction.ExchangeProcessor ep) {
+            return Uni.createFrom().item(() ->
+                                                 (WorkerResult) ((java.util.function.BiFunction) ep.fn()).apply(input, null));
+        }
         throw new UnsupportedOperationException(
                 "Unsupported function type: " + worker.function().getClass().getName());
     }

@@ -406,5 +406,29 @@ class WorkerExecutorTest {
     }
 
 
+    @Test
+    void execute_exchangeProcessor_returns_result() {
+        var ep = new WorkerFunction.ExchangeProcessor<>(
+                String.class, String.class,
+                (exchange, scope) -> WorkerResult.of(exchange.withBody("processed: " + exchange.body())));
+        Worker worker = Worker.builder()
+                              .name("ep-worker")
+                              .capabilityName("process")
+                              .function(ep)
+                              .executionPolicy(ExecutionPolicy.noRetry())
+                              .build();
+        Capability                             capability = Capability.of("process", "{}", "{}");
+        io.casehub.worker.api.Exchange<String> input      = io.casehub.worker.api.Exchange.of("raw");
+
+        @SuppressWarnings("unchecked")
+        WorkerResult<io.casehub.worker.api.Exchange<String>> result =
+                (WorkerResult<io.casehub.worker.api.Exchange<String>>) (WorkerResult<?>)
+                                                                               executor.execute(worker, capability, input).await().indefinitely();
+
+        assertThat(result.outcome()).isInstanceOf(WorkerOutcome.Success.class);
+        io.casehub.worker.api.Exchange<?> output = result.output();
+        assertThat(output.body()).isEqualTo("processed: raw");
+    }
+
     record TestPojo(String name, int age) {}
 }

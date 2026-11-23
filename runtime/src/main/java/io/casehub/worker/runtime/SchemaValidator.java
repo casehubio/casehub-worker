@@ -2,13 +2,15 @@ package io.casehub.worker.runtime;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.Schema;
-import com.networknt.schema.SchemaRegistry;
-import com.networknt.schema.SpecificationVersion;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SpecVersion;
+import com.networknt.schema.ValidationMessage;
 import io.casehub.worker.api.Capability;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -18,9 +20,9 @@ public class SchemaValidator {
     private static final String EMPTY_SCHEMA = "{}";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final SchemaRegistry schemaRegistry =
-        SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12);
-    private final ConcurrentHashMap<String, Schema> cache = new ConcurrentHashMap<>();
+    private final JsonSchemaFactory schemaFactory =
+        JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
+    private final ConcurrentHashMap<String, JsonSchema> cache = new ConcurrentHashMap<>();
 
     public void ensureSchemaParsed(String schema) {
         if (EMPTY_SCHEMA.equals(schema)) return;
@@ -37,20 +39,20 @@ public class SchemaValidator {
 
     private Optional<String> validate(String schemaString, Object data) {
         if (EMPTY_SCHEMA.equals(schemaString)) {return Optional.empty();}
-        Schema                                           schema = cache.computeIfAbsent(schemaString, this::parseSchema);
-        JsonNode                                         node   = objectMapper.valueToTree(data);
-        java.util.Collection<com.networknt.schema.Error>  errors = schema.validate(node);
+        JsonSchema             schema = cache.computeIfAbsent(schemaString, this::parseSchema);
+        JsonNode               node   = objectMapper.valueToTree(data);
+        Set<ValidationMessage> errors = schema.validate(node);
         if (errors.isEmpty()) {return Optional.empty();}
         String message = errors.stream()
-                               .map(com.networknt.schema.Error::getMessage)
+                               .map(ValidationMessage::getMessage)
                                .collect(Collectors.joining("\n"));
         return Optional.of(message);
     }
 
-    private Schema parseSchema(String schemaString) {
+    private JsonSchema parseSchema(String schemaString) {
         try {
             JsonNode schemaNode = objectMapper.readTree(schemaString);
-            return schemaRegistry.getSchema(schemaNode);
+            return schemaFactory.getSchema(schemaNode);
         } catch (Exception e) {
             throw new IllegalArgumentException(
                 "Malformed JSON Schema: " + e.getMessage(), e);
